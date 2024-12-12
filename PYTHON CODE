@@ -1,0 +1,232 @@
+import PySimpleGUI as sg
+import os
+import logging
+from PIL import Image, ImageOps
+
+# Konfigurasi logging
+logging.basicConfig(filename="debug.log", level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Fungsi untuk proses citra
+def image_threshold(img, threshold):
+    """Segmentasi thresholding sederhana."""
+    gray_img = img.convert("L")  # Konversi ke grayscale
+    binary_img = gray_img.point(lambda p: 255 if p > threshold else 0, '1')
+    return binary_img
+
+# Layout untuk aplikasiA
+file_list_column = [
+    [sg.Text("Pilih Folder Gambar:")],
+    [sg.In(size=(25, 1), enable_events=True, key="ImgFolder"), sg.FolderBrowse()],
+    [sg.Text("Daftar Gambar:")],
+    [sg.Listbox(values=[], enable_events=True, size=(25, 10), key="ImgList")],
+]
+
+image_viewer_column = [
+    [sg.Text("Gambar Input:")],
+    [sg.Text(size=(40, 1), key="FilepathImgInput")],
+    [sg.Image(key="ImgInputViewer")],
+]
+
+list_processing_column = [
+    [sg.Text("Informasi Gambar:")],
+    [sg.Text(size=(25, 1), key="ImgSize")],
+    [sg.Text(size=(25, 1), key="ImgColorDepth")],
+    [sg.Text("List Proses Gambar:")],
+    [sg.Text("Threshold:")],
+    [sg.Slider(range=(0, 255), orientation='h', size=(15, 20), default_value=128, key="ThresholdSlider")],
+    [sg.Button("Thresholding", size=(15, 1), key="ImgThreshold")],
+]
+
+image_output_column = [
+    [sg.Text("Output Gambar:")],
+    [sg.Image(key="ImgOutputViewer")],
+]
+
+layout = [
+    [
+        sg.Column(file_list_column),
+        sg.VSeperator(),
+        sg.Column(image_viewer_column),
+        sg.VSeperator(),
+        sg.Column(list_processing_column),
+        sg.VSeperator(),
+        sg.Column(image_output_column),
+    ]
+]
+
+# Inisialisasi Window
+window = sg.Window("Mini Image Editor", layout)
+filename_out = "out.png"
+
+# Event Loop
+while True:
+    event, values = window.read()
+    if event == sg.WIN_CLOSED:
+        break
+
+    # Ketika folder dipilih
+    if event == "ImgFolder":
+        folder = values["ImgFolder"]
+        try:
+            file_list = os.listdir(folder)
+        except FileNotFoundError:
+            file_list = []
+
+        # Filter file gambar
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(os.path.join(folder, f))
+            and f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))
+        ]
+        window["ImgList"].update(fnames)
+
+    # Ketika file dipilih dari daftar
+    elif event == "ImgList":
+        try:
+            filename = os.path.join(values["ImgFolder"], values["ImgList"][0])
+            with Image.open(filename) as img_input:
+                img_input.verify()  # Memastikan file gambar valid
+
+            img_input = Image.open(filename)  # Membuka ulang untuk diproses
+
+            # Update viewer input dan informasi gambar
+            window["FilepathImgInput"].update(filename)
+            window["ImgInputViewer"].update(filename=filename)
+            window["ImgSize"].update(f"Ukuran: {img_input.size[0]} x {img_input.size[1]}")
+            window["ImgColorDepth"].update(f"Mode: {img_input.mode}")
+        except (IOError, SyntaxError) as e:
+            logging.error(f"Error opening file {filename}: {e}")
+            sg.popup_error("Gagal membuka file gambar! File mungkin rusak atau tidak valid.", e)
+        except IndexError:
+            logging.error("Tidak ada gambar yang dipilih dari daftar.")
+            sg.popup_error("Silakan pilih gambar dari daftar.")
+
+    # Ketika tombol Thresholding ditekan
+    elif event == "ImgThreshold":
+        try:
+            threshold = int(values["ThresholdSlider"])
+            img_output = image_threshold(img_input, threshold)
+            img_output.save(filename_out)
+            window["ImgOutputViewer"].update(filename=filename_out)
+        except Exception as e:
+            logging.error(f"Error processing image: {e}")
+            sg.popup_error("Gagal memproses gambar! Pastikan file input valid.", e)
+
+window.close()
+import PySimpleGUI as sg
+import os
+import logging
+from PIL import Image, ImageOps
+
+# Konfigurasi logging
+logging.basicConfig(filename="debug.log", level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Fungsi untuk proses citra
+def image_threshold(img, threshold):
+    """Segmentasi thresholding sederhana."""
+    gray_img = img.convert("L")  # Konversi ke grayscale
+    binary_img = gray_img.point(lambda p: 255 if p > threshold else 0, '1')
+    return binary_img
+
+# Layout untuk aplikasi
+file_list_column = [
+    [sg.Text("Pilih Folder Gambar:")],
+    [sg.In(size=(25, 1), enable_events=True, key="ImgFolder"), sg.FolderBrowse()],
+    [sg.Text("Daftar Gambar:")],
+    [sg.Listbox(values=[], enable_events=True, size=(25, 10), key="ImgList")],
+]
+
+image_viewer_column = [
+    [sg.Text("Gambar Input:")],
+    [sg.Text(size=(40, 1), key="FilepathImgInput")],
+    [sg.Image(key="ImgInputViewer")],
+]
+
+list_processing_column = [
+    [sg.Text("Informasi Gambar:")],
+    [sg.Text(size=(25, 1), key="ImgSize")],
+    [sg.Text(size=(25, 1), key="ImgColorDepth")],
+    [sg.Text("List Proses Gambar:")],
+    [sg.Text("Threshold:")],
+    [sg.Slider(range=(0, 255), orientation='h', size=(15, 20), default_value=128, key="ThresholdSlider")],
+    [sg.Button("Thresholding", size=(15, 1), key="ImgThreshold")],
+]
+
+image_output_column = [
+    [sg.Text("Output Gambar:")],
+    [sg.Image(key="ImgOutputViewer")],
+]
+
+layout = [
+    [
+        sg.Column(file_list_column),
+        sg.VSeperator(),
+        sg.Column(image_viewer_column),
+        sg.VSeperator(),
+        sg.Column(list_processing_column),
+        sg.VSeperator(),
+        sg.Column(image_output_column),
+    ]
+]
+
+# Inisialisasi Window
+window = sg.Window("Mini Image Editor", layout)
+filename_out = "out.png"
+
+# Event Loop
+while True:
+    event, values = window.read()
+    if event == sg.WIN_CLOSED:
+        break
+
+    # Ketika folder dipilih
+    if event == "ImgFolder":
+        folder = values["ImgFolder"]
+        try:
+            file_list = os.listdir(folder)
+        except FileNotFoundError:
+            file_list = []
+
+        # Filter file gambar
+        fnames = [
+            f
+            for f in file_list
+            if os.path.isfile(os.path.join(folder, f))
+            and f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))
+        ]
+        window["ImgList"].update(fnames)
+
+    # Ketika file dipilih dari daftar
+    elif event == "ImgList":
+        try:
+            filename = os.path.join(values["ImgFolder"], values["ImgList"][0])
+            with Image.open(filename) as img_input:
+                img_input.verify()  # Memastikan file gambar valid
+
+            img_input = Image.open(filename)  # Membuka ulang untuk diproses
+
+            # Update viewer input dan informasi gambar
+            window["FilepathImgInput"].update(filename)
+            window["ImgInputViewer"].update(filename=filename)
+            window["ImgSize"].update(f"Ukuran: {img_input.size[0]} x {img_input.size[1]}")
+            window["ImgColorDepth"].update(f"Mode: {img_input.mode}")
+        except (IOError, SyntaxError) as e:
+            logging.error(f"Error opening file {filename}: {e}")
+            sg.popup_error("Gagal membuka file gambar! File mungkin rusak atau tidak valid.", e)
+        except IndexError:
+            logging.error("Tidak ada gambar yang dipilih dari daftar.")
+            sg.popup_error("Silakan pilih gambar dari daftar.")
+
+    # Ketika tombol Thresholding ditekan
+    elif event == "ImgThreshold":
+        try:
+            threshold = int(values["ThresholdSlider"])
+            img_output = image_threshold(img_input, threshold)
+            img_output.save(filename_out)
+            window["ImgOutputViewer"].update(filename=filename_out)
+        except Exception as e:
+            logging.error(f"Error processing image: {e}")
+            sg.popup_error("Gagal memproses gambar! Pastikan file input valid.", e)
+
+window.close()
